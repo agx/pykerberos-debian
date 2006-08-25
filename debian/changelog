@@ -1,0 +1,6 @@
+pykerberos (0.0.svn55-1) unstable; urgency=low
+
+  * Initial release (Closes: #384589)
+
+ -- Guido Guenther <agx@sigxcpu.org>  Thu, 24 Aug 2006 14:38:08 +0200
+

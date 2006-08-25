@@ -1,0 +1,27 @@
+Index: pykerberos-0.0.svn55/setup.py
+===================================================================
+--- pykerberos-0.0.svn55.orig/setup.py	2006-08-24 14:31:02.000000000 +0200
++++ pykerberos-0.0.svn55/setup.py	2006-08-24 14:35:01.000000000 +0200
+@@ -19,16 +19,20 @@
+ from distutils.core import setup, Extension
+ import sys
+ 
+-if sys.platform in ["darwin", "macosx"]: 
++if sys.platform in ["darwin", "macosx", "linux2" ]:
+ 
+     """
+     On Mac OS X we build the actual Python module linking to the
+     Kerberos.framework.
+     """
++    if sys.platform in [ "linux2" ]:
++	extra_link_args = ['-lgssapi' ]
++    else:
++        extra_link_args = ['-framework', 'Kerberos']
+ 
+     module1 = Extension(
+         'kerberos',
+-        extra_link_args = ['-framework', 'Kerberos'],
++        extra_link_args = extra_link_args,
+         sources = [
+             'src/kerberos.c',
+             'src/kerberosbasic.c',
