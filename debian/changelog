@@ -1,3 +1,9 @@
+pykerberos (0.0.svn55-2) unstable; urgency=low
+
+  * rename to python-kerberos
+
+ -- Guido Guenther <agx@sigxcpu.org>  Thu,  7 Sep 2006 19:00:54 +0200
+
 pykerberos (0.0.svn55-1) unstable; urgency=low
 
   * Initial release (Closes: #384589)
