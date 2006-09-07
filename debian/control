@@ -5,9 +5,12 @@ Maintainer: Guido Guenther <agx@sigxcpu.org>
 Build-Depends: cdbs, debhelper (>= 5), quilt, heimdal-dev, python-dev, python-support (>= 0.3)
 Standards-Version: 3.7.2
 
-Package: python2.4-kerberos
+Package: python-kerberos
 Architecture: any
 Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Replaces: python2.4-kerberos (<= 0.0.svn55-1)
+Conflicts: python2.4-kerberos (<= 0.0.svn55-1)
+Provides: python2.4-kerberos
 Description: A GSSAPI interface module for python
  This Python package is a high-level wrapper for Kerberos (GSSAPI) operations.
  The goal is to avoid having to build a module that wraps the entire
