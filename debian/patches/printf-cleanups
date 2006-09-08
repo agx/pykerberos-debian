@@ -1,7 +1,7 @@
 Index: pykerberos/src/kerberosbasic.c
 ===================================================================
---- pykerberos.orig/src/kerberosbasic.c	2006-08-24 13:50:44.000000000 +0200
-+++ pykerberos/src/kerberosbasic.c	2006-08-24 13:59:08.000000000 +0200
+--- pykerberos.orig/src/kerberosbasic.c	2006-08-25 11:47:00.000000000 +0200
++++ pykerberos/src/kerberosbasic.c	2006-09-08 19:13:10.000000000 +0200
 @@ -21,7 +21,7 @@
  #include <stdio.h>
  #include <string.h>
@@ -83,18 +83,18 @@ Index: pykerberos/src/kerberosbasic.c
  	}
 Index: pykerberos/src/kerberosgss.c
 ===================================================================
---- pykerberos.orig/src/kerberosgss.c	2006-08-24 11:43:29.000000000 +0200
-+++ pykerberos/src/kerberosgss.c	2006-08-24 14:03:04.000000000 +0200
-@@ -25,7 +25,7 @@
- 
- #include <Kerberos/KerberosLogin.h>
+--- pykerberos.orig/src/kerberosgss.c	2006-09-08 19:10:25.000000000 +0200
++++ pykerberos/src/kerberosgss.c	2006-09-08 19:13:10.000000000 +0200
+@@ -23,7 +23,7 @@
+ #include <stdio.h>
+ #include <string.h>
  
 -#define PRINTFS
 +#undef PRINTFS
  
  static const char *get_gss_error(char *p, int psize, OM_uint32 err_maj, OM_uint32 err_min, char *prefix);
  
-@@ -33,7 +33,9 @@
+@@ -31,7 +31,9 @@
  {
  	OM_uint32 maj_stat;
  	OM_uint32 min_stat;
@@ -104,7 +104,7 @@ Index: pykerberos/src/kerberosgss.c
  	gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
  	int ret = AUTH_GSS_COMPLETE;
  
-@@ -89,7 +91,9 @@
+@@ -87,7 +89,9 @@
  {
  	OM_uint32 maj_stat;
  	OM_uint32 min_stat;
@@ -114,7 +114,7 @@ Index: pykerberos/src/kerberosgss.c
  	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
  	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
  	int ret = AUTH_GSS_CONTINUE;
-@@ -191,7 +195,9 @@
+@@ -189,7 +193,9 @@
  {
  	OM_uint32 maj_stat;
  	OM_uint32 min_stat;
@@ -124,7 +124,7 @@ Index: pykerberos/src/kerberosgss.c
  	gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
  	int ret = AUTH_GSS_COMPLETE;
  	
-@@ -269,7 +275,9 @@
+@@ -267,7 +273,9 @@
  {
  	OM_uint32 maj_stat;
  	OM_uint32 min_stat;
