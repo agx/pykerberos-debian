@@ -21,9 +21,10 @@
 #include "base64.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#define PRINTFS
+#undef PRINTFS
 
 static const char *get_gss_error(char *p, int psize, OM_uint32 err_maj, OM_uint32 err_min, char *prefix);
 
@@ -31,7 +32,9 @@ int authenticate_gss_client_init(const char* service, gss_client_state *state)
 {
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
+#ifdef PRINTFS
 	char buf[1024];
+#endif
 	gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_COMPLETE;
 
@@ -87,7 +90,9 @@ int authenticate_gss_client_step(gss_client_state *state, const char* challenge)
 {
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
+#ifdef PRINTFS
 	char buf[1024];
+#endif
 	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_CONTINUE;
@@ -189,7 +194,9 @@ int authenticate_gss_server_init(const char* service, gss_server_state *state)
 {
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
+#ifdef PRINTFS
 	char buf[1024];
+#endif
 	gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_COMPLETE;
 	
@@ -267,7 +274,9 @@ int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
 {
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
+#ifdef PRINTFS
 	char buf[1024];
+#endif
 	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_CONTINUE;
