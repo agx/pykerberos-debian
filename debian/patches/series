@@ -1,5 +1,3 @@
-printf-cleanups
-include-stdlib
 kerberos-includes
 declare-nt-service
 python-include
