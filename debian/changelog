@@ -1,3 +1,17 @@
+pykerberos (0.0.svn124-2) unstable; urgency=low
+
+  * use MIT kerberos instead of heimdal kerberos. This makes it easier for us
+    to keep close to upstream.
+  * dropped patches:
+     declare-nt-service - not needed with MIT kerberos
+  * modified patches:
+     kerberos-includes
+     setup.py
+    pass the include dirs via setup.py instead of #ifdef'ing them in the
+    header files
+
+ -- Guido Guenther <agx@sigxcpu.org>  Fri, 15 Sep 2006 13:57:13 +0200
+
 pykerberos (0.0.svn124-1) unstable; urgency=low
 
   * new upstream SVN version

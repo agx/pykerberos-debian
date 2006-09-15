@@ -1,8 +1,8 @@
-Index: pykerberos-0.0.svn55/setup.py
+Index: pykerberos/setup.py
 ===================================================================
---- pykerberos-0.0.svn55.orig/setup.py	2006-08-24 14:31:02.000000000 +0200
-+++ pykerberos-0.0.svn55/setup.py	2006-08-24 14:35:01.000000000 +0200
-@@ -19,16 +19,20 @@
+--- pykerberos.orig/setup.py	2006-09-15 15:13:31.000000000 +0200
++++ pykerberos/setup.py	2006-09-15 15:17:02.000000000 +0200
+@@ -19,16 +19,24 @@
  from distutils.core import setup, Extension
  import sys
  
@@ -14,14 +14,18 @@ Index: pykerberos-0.0.svn55/setup.py
      Kerberos.framework.
      """
 +    if sys.platform in [ "linux2" ]:
-+	extra_link_args = ['-lgssapi' ]
++        import commands
++	extra_link_args = commands.getoutput('krb5-config --libs gssapi').split()
++	include_dirs='/usr/include/gssapi/',
 +    else:
 +        extra_link_args = ['-framework', 'Kerberos']
++	include_dirs='/usr/include/Kerberos/',
  
      module1 = Extension(
          'kerberos',
 -        extra_link_args = ['-framework', 'Kerberos'],
 +        extra_link_args = extra_link_args,
++	include_dirs = include_dirs,
          sources = [
              'src/kerberos.c',
              'src/kerberosbasic.c',
