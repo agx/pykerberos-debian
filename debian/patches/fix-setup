@@ -1,31 +1,13 @@
 Index: pykerberos/setup.py
 ===================================================================
---- pykerberos.orig/setup.py	2006-09-15 15:13:31.000000000 +0200
-+++ pykerberos/setup.py	2006-09-15 15:17:02.000000000 +0200
-@@ -19,16 +19,24 @@
- from distutils.core import setup, Extension
- import sys
+--- pykerberos.orig/setup.py	2006-09-27 09:58:06.000000000 +0200
++++ pykerberos/setup.py	2006-09-27 10:01:40.000000000 +0200
+@@ -23,6 +23,8 @@
+ if sys.platform == "darwin":
+     # krb5-config --cflags is broken on OS X
+     include_dirs = ["/System/Library/Frameworks/Kerberos.framework/Versions/Current/Headers"]
++elif sys.platform == "linux2":
++    include_dirs = ["/usr/include/gssapi/"]
+ else:
+     include_dirs = []
  
--if sys.platform in ["darwin", "macosx"]: 
-+if sys.platform in ["darwin", "macosx", "linux2" ]:
- 
-     """
-     On Mac OS X we build the actual Python module linking to the
-     Kerberos.framework.
-     """
-+    if sys.platform in [ "linux2" ]:
-+        import commands
-+	extra_link_args = commands.getoutput('krb5-config --libs gssapi').split()
-+	include_dirs='/usr/include/gssapi/',
-+    else:
-+        extra_link_args = ['-framework', 'Kerberos']
-+	include_dirs='/usr/include/Kerberos/',
- 
-     module1 = Extension(
-         'kerberos',
--        extra_link_args = ['-framework', 'Kerberos'],
-+        extra_link_args = extra_link_args,
-+	include_dirs = include_dirs,
-         sources = [
-             'src/kerberos.c',
-             'src/kerberosbasic.c',
