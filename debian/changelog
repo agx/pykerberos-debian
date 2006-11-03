@@ -1,3 +1,10 @@
+pykerberos (0.0.svn271-1) unstable; urgency=low
+
+  * New Upstream Version. This fixes the bad error reporting, so after the API
+    is approved stable upstream we can move this package back to testing.
+
+ -- Guido Guenther <agx@sigxcpu.org>  Fri,  3 Nov 2006 18:01:08 +0100
+
 pykerberos (0.0.svn202-1) unstable; urgency=low
 
   * New Upstream Version
