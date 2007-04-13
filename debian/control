@@ -4,6 +4,7 @@ Priority: optional
 Maintainer: Guido Guenther <agx@sigxcpu.org>
 Build-Depends: cdbs, debhelper (>= 5), quilt, libkrb5-dev, python-dev, python-support (>= 0.3)
 Standards-Version: 3.7.2
+XS-Vcs-Git: http://honk.sigxcpu.org/git/debian-packages/pykerberos/
 
 Package: python-kerberos
 Architecture: any
