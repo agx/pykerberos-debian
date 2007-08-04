@@ -1,5 +1,5 @@
 ##
-# Copyright (c) 2006 Apple Computer, Inc. All rights reserved.
+# Copyright (c) 2006-2007 Apple Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -53,6 +53,16 @@ def checkPassword(user, pswd, service, default_realm):
         supplied in the user argument. Note that Kerberos realms are normally all
         uppercase (e.g., 'EXAMPLE.COM').
     @return:              True if authentication succeeds, False otherwise.
+    """
+
+def getServerPrincipalDetails(service, hostname):
+    """
+    This function returns the service principal for the server given a service type
+    and hostname. Details are looked up via the /etc/keytab file.
+    
+    @param service:       a string containing the Kerberos service type for the server.
+    @param hostname:      a string containing the hostname of the server.
+    @return:              a string containing the service principal.
     """
 
 """
