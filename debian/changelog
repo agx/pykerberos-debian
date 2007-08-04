@@ -1,3 +1,10 @@
+pykerberos (0.0.svn1541-1) unstable; urgency=low
+
+  * Forward to upstream svn revision 1541
+  * new patch: python_includes.diff, upstream broke the python.h include again 
+
+ -- Guido Guenther <agx@sigxcpu.org>  Sat, 04 Aug 2007 23:27:24 +0200
+
 pykerberos (0.0.svn271-2) unstable; urgency=low
 
   * build depend on python-all-dev, thanks to Cyril Brulebois
