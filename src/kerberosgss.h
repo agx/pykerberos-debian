@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2006 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2006-2007 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ typedef struct {
 	char*			username;
 	char*			response;
 } gss_server_state;
+
+char* server_principal_details(const char* service, const char* hostname);
 
 int authenticate_gss_client_init(const char* service, gss_client_state *state);
 int authenticate_gss_client_clean(gss_client_state *state);
