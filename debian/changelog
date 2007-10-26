@@ -1,3 +1,10 @@
+pykerberos (1.0-1) unstable; urgency=low
+
+  * "New" upstream version
+  * Upstream finally tagged a 1.0 version (which is identical to 0.0.svn1541)
+
+ -- Guido Guenther <agx@sigxcpu.org>  Fri, 26 Oct 2007 13:14:57 +0200
+
 pykerberos (0.0.svn1541-1) unstable; urgency=low
 
   * Forward to upstream svn revision 1541
