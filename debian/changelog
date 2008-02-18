@@ -1,4 +1,4 @@
-pykerberos (1.0+mk08218-1) experimental; urgency=low
+pykerberos (1.0+mk080218-1) experimental; urgency=low
 
   * new version based on upstream's more-kerberos branch that basically
     consists ouf our patches:
@@ -6,6 +6,9 @@ pykerberos (1.0+mk08218-1) experimental; urgency=low
      http://trac.macosforge.org/projects/calendarserver/ticket/214
     plus the so far unapplied:
      http://trac.macosforge.org/projects/calendarserver/ticket/256
+  * Python should be uppercase according to lintian, thanks!
+  * bump standards version
+  * drop python-includes.diff - fixed upstream
 
  -- Guido Guenther <agx@sigxcpu.org>  Mon, 18 Feb 2008 10:41:19 +0100
 
