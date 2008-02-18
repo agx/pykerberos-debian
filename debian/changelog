@@ -1,3 +1,14 @@
+pykerberos (1.0+mk08218-1) experimental; urgency=low
+
+  * new version based on upstream's more-kerberos branch that basically
+    consists ouf our patches:
+     http://trac.macosforge.org/projects/calendarserver/ticket/213
+     http://trac.macosforge.org/projects/calendarserver/ticket/214
+    plus the so far unapplied:
+     http://trac.macosforge.org/projects/calendarserver/ticket/256
+
+ -- Guido Guenther <agx@sigxcpu.org>  Mon, 18 Feb 2008 10:41:19 +0100
+
 pykerberos (1.0-1) unstable; urgency=low
 
   * "New" upstream version
