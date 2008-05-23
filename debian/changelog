@@ -1,3 +1,14 @@
+pykerberos (1.0+svn2447-1) unstable; urgency=low
+
+  * upload to unstable
+  * [39186bf] new upsteram SVN snapshot @2447 that has out password changing
+    support (Trac: #256) merged
+  * [b54f64b] Pick our wrap/unwrap patches from the more-kerberos branch of
+    upstream's svn (Trac: #213, #214)
+  * [5d197f5] reenable quilt
+
+ -- Guido Guenther <agx@sigxcpu.org>  Fri, 23 May 2008 10:09:01 +0200
+
 pykerberos (1.0+mk080218-1) experimental; urgency=low
 
   * new version based on upstream's more-kerberos branch that basically
