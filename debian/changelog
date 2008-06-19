@@ -1,3 +1,18 @@
+pykerberos (1.0+svn2455-1) unstable; urgency=low
+
+  * [fc16d01] Forward to SVN revision 2455
+  * [310bf2b] New patches:
+        0001-all-invocations-of-PyCObject_Check-pystate-should-r.patch: 
+            don't return error without setting an exception
+        0001-make-the-user-parameter-optional.patch: 
+            make gss_wrap/unwrap more flexible
+  * [54f6106] Drop patches includeded upstream: 
+        0001-Some-useful- constants.patch 
+        0002-Wrap-Unwrap.patch
+        0003-Remove-some-OS-X- specific-descriptions.patch series
+
+ -- Guido Guenther <agx@sigxcpu.org>  Thu, 19 Jun 2008 14:21:57 +0200
+
 pykerberos (1.0+svn2447-1) unstable; urgency=low
 
   * upload to unstable
