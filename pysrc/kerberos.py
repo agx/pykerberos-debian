@@ -38,8 +38,7 @@ def checkPassword(user, pswd, service, default_realm):
     
     NB For this to work properly the Kerberos must be configured properly on this machine.
     That will likely mean ensuring that the edu.mit.Kerberos preference file has the correct
-    realms and KDCs listed. This can be done via the /System/Library/CoreServices/Kerberos.app
-    tool's 'Edit Realms' command.
+    realms and KDCs listed.
     
     @param user:          a string containing the Kerberos user name. A realm may be
         included by appending an '@' followed by the realm string to the actual user id.
@@ -87,6 +86,10 @@ GSSAPI Function Result Codes:
 
 """
 
+# Some useful result codes
+AUTH_GSS_CONTINUE=0 
+AUTH_GSS_COMPLETE=1 
+     
 def authGSSClientInit(service):
     """
     Initializes a context for GSSAPI client-side authentication with the given service principal.
@@ -134,6 +137,23 @@ def authGSSClientUserName(context):
     @param context:   the context object returned from authGSSClientInit.
     @return:          a string containing the user name.
     """
+
+def authGSSClientUnwrap(context, challenge): 
+    """ 
+    Perform the client side GSSAPI unwrap step 
+    
+    @param challenge: a string containing the base64-encoded server data. 
+    @return: a result code (see above) 
+    """ 
+
+def authGSSClientWrap(context, data, user): 
+    """ 
+    Perform the client side GSSAPI wrap step.  
+    
+    @param data:the result of the authGSSClientResponse after the authGSSClientUnwrap 
+    @param user: the user to authorize 
+    @return: a result code (see above) 
+    """ 
 
 def authGSSServerInit(service):
     """
