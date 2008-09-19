@@ -1,3 +1,14 @@
+pykerberos (1.1-2) experimental; urgency=low
+
+  * [f68dfb7] remove duplicate doc entry
+  * [cd1a498] bump standards version
+  * [97d849a] install API docs
+  * [a34e869] install example
+  * [f302b04] don't ship the full Apache 2.0 license
+  * [71c4d36] remove quilt build-dep
+
+ -- Guido Guenther <agx@sigxcpu.org>  Fri, 19 Sep 2008 12:43:55 +0200
+
 pykerberos (1.1-1) experimental; urgency=low
 
   * [21a4f56] Imported Upstream version 1.1
