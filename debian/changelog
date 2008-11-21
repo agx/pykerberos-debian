@@ -1,3 +1,10 @@
+pykerberos (1.1-3) unstable; urgency=low
+
+  * upload to unstable
+  * [13c43c2] fix maintainer
+
+ -- Guido Günther <agx@sigxcpu.org>  Fri, 21 Nov 2008 14:03:31 +0100
+
 pykerberos (1.1-2) experimental; urgency=low
 
   * [f68dfb7] remove duplicate doc entry
