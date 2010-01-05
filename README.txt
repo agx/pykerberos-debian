@@ -1,7 +1,7 @@
 =========================================================
 PyKerberos Package
 
-Copyright (c) 2006-2007 Apple Inc. All rights reserved.
+Copyright (c) 2006-2008 Apple Inc. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ The goal is to avoid having to build a module that wraps the entire Kerberos.fra
 and instead offer a limited set of functions that do what is needed for client/server
 Kerberos authentication based on <http://www.ietf.org/rfc/rfc4559.txt>.
 
-Much of the C-code here is adapted from Appache's mod_auth_kerb-5.0rc7.
+Much of the C-code here is adapted from Apache's mod_auth_kerb-5.0rc7.
 
 ========
 CONTENTS
@@ -60,7 +60,7 @@ Then run test.py with suitable command line arguments:
     
     -u : user id for basic authenticate
     -p : password for basic authenticate
-    -s : service principal for GSSAPI authentication (defaults to 'caldav@caldav.apple.com')
+    -s : service principal for GSSAPI authentication (defaults to 'http@host.example.com')
 
 ===========
 Python APIs

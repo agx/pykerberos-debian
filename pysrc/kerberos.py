@@ -1,5 +1,5 @@
 ##
-# Copyright (c) 2006-2007 Apple Inc. All rights reserved.
+# Copyright (c) 2006-2009 Apple Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# DRI: Cyrus Daboo, cdaboo@apple.com
 ##
 
 """
@@ -87,10 +85,21 @@ GSSAPI Function Result Codes:
 """
 
 # Some useful result codes
-AUTH_GSS_CONTINUE=0 
-AUTH_GSS_COMPLETE=1 
+AUTH_GSS_CONTINUE     = 0 
+AUTH_GSS_COMPLETE     = 1 
      
-def authGSSClientInit(service):
+# Some useful gss flags 
+GSS_C_DELEG_FLAG      = 1 
+GSS_C_MUTUAL_FLAG     = 2 
+GSS_C_REPLAY_FLAG     = 4 
+GSS_C_SEQUENCE_FLAG   = 8 
+GSS_C_CONF_FLAG       = 16 
+GSS_C_INTEG_FLAG      = 32 
+GSS_C_ANON_FLAG       = 64 
+GSS_C_PROT_READY_FLAG = 128 
+GSS_C_TRANS_FLAG      = 256 
+     
+def authGSSClientInit(service, gssflags=GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG):
     """
     Initializes a context for GSSAPI client-side authentication with the given service principal.
     authGSSClientClean must be called after this function returns an OK result to dispose of
@@ -98,7 +107,10 @@ def authGSSClientInit(service):
 
     @param service: a string containing the service principal in the form 'type@fqdn'
         (e.g. 'imap@mail.apple.com').
-    @return:        a tuple of (result, context) where result is the result code (see above) and
+    @param gssflags: optional integer used to set GSS flags.
+        (e.g.  GSS_C_DELEG_FLAG|GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG will allow 
+        for forwarding credentials to the remote host)
+    @return: a tuple of (result, context) where result is the result code (see above) and
         context is an opaque value that will need to be passed to subsequent functions.
     """
 
@@ -108,25 +120,25 @@ def authGSSClientClean(context):
     object is invalid and should not be used again.
 
     @param context: the context object returned from authGSSClientInit.
-    @return:        a result code (see above).
+    @return: a result code (see above).
     """
 
 def authGSSClientStep(context, challenge):
     """
     Processes a single GSSAPI client-side step using the supplied server data.
 
-    @param context:   the context object returned from authGSSClientInit.
+    @param context: the context object returned from authGSSClientInit.
     @param challenge: a string containing the base64-encoded server data (which may be empty
         for the first step).
-    @return:          a result code (see above).
+    @return: a result code (see above).
     """
 
 def authGSSClientResponse(context):
     """
     Get the client response from the last successful GSSAPI client-side step.
 
-    @param context:   the context object returned from authGSSClientInit.
-    @return:          a string containing the base64-encoded client data to be sent to the server.
+    @param context: the context object returned from authGSSClientInit.
+    @return: a string containing the base64-encoded client data to be sent to the server.
     """
 
 def authGSSClientUserName(context):
@@ -135,7 +147,7 @@ def authGSSClientUserName(context):
     This method must only be called after authGSSClientStep returns a complete response code.
 
     @param context:   the context object returned from authGSSClientInit.
-    @return:          a string containing the user name.
+    @return: a string containing the user name.
     """
 
 def authGSSClientUnwrap(context, challenge): 
@@ -163,7 +175,7 @@ def authGSSServerInit(service):
 
     @param service: a string containing the service principal in the form 'type@fqdn'
         (e.g. 'imap@mail.apple.com').
-    @return:        a tuple of (result, context) where result is the result code (see above) and
+    @return: a tuple of (result, context) where result is the result code (see above) and
         context is an opaque value that will need to be passed to subsequent functions.
     """
 
@@ -173,32 +185,41 @@ def authGSSServerClean(context):
     object is invalid and should not be used again.
 
     @param context: the context object returned from authGSSServerInit.
-    @return:        a result code (see above).
+    @return: a result code (see above).
     """
 
 def authGSSServerStep(context, challenge):
     """
     Processes a single GSSAPI server-side step using the supplied client data.
 
-    @param context:   the context object returned from authGSSServerInit.
+    @param context: the context object returned from authGSSServerInit.
     @param challenge: a string containing the base64-encoded client data.
-    @return:          a result code (see above).
+    @return: a result code (see above).
     """
 
 def authGSSServerResponse(context):
     """
     Get the server response from the last successful GSSAPI server-side step.
 
-    @param context:   the context object returned from authGSSServerInit.
-    @return:          a string containing the base64-encoded server data to be sent to the client.
+    @param context: the context object returned from authGSSServerInit.
+    @return: a string containing the base64-encoded server data to be sent to the client.
     """
 
 def authGSSServerUserName(context):
     """
     Get the user name of the principal trying to authenticate to the server.
-    This method must only be called after authGSSClientStep returns a complete or continue response code.
+    This method must only be called after authGSSServerStep returns a complete or continue response code.
 
-    @param context:   the context object returned from authGSSServerInit.
-    @return:          a string containing the user name.
+    @param context: the context object returned from authGSSServerInit.
+    @return: a string containing the user name.
+    """
+
+def authGSSServerTargetName(context):
+    """
+    Get the target name if the server did not supply its own credentials.
+    This method must only be called after authGSSServerStep returns a complete or continue response code.
+
+    @param context: the context object returned from authGSSServerInit.
+    @return: a string containing the target name.
     """
 
