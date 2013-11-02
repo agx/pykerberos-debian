@@ -1,3 +1,11 @@
+pykerberos (1.1+svn10616-1) unstable; urgency=low
+
+  * [ef7f26c] New upstream version 1.1+svn10616
+  * [aa395ca] Remove article form package description to make lintian happy.
+  * [d74731c] Bump standards version
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 02 Nov 2013 20:46:45 +0100
+
 pykerberos (1.1+svn4895-1) unstable; urgency=low
 
   * [d6e470d] fix typo in package description (Closes: #520276) - thanks to
