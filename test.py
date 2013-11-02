@@ -1,5 +1,6 @@
+#!/usr/bin/env python
 ##
-# Copyright (c) 2006-2009 Apple Inc. All rights reserved.
+# Copyright (c) 2006-2013 Apple Inc. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +22,21 @@ import sys
 import httplib
 import socket
 import ssl
+
+"""
+Examples:
+
+sudo ./test.py -s HTTP@example.com service
+
+sudo ./test.py -u user01 -p user01 -s HTTP@example.com -r EXAMPLE.COM basic
+
+sudo ./test.py -s HTTP@example.com -r EXAMPLE.COM gssapi
+
+./test.py -s HTTP@example.com -h calendar.example.com -p 8008 server
+
+For the gssapi and server tests you will need to kinit a principal on the server first.
+
+"""
 
 def main():
     
@@ -115,7 +131,7 @@ def testGSSAPI(service):
     if rc != 1:
         return
     
-    rs, vs = kerberos.authGSSServerInit("");
+    rs, vs = kerberos.authGSSServerInit(service);
     print "Status for authGSSServerInit = %s" % statusText(rs);
     if rs != 1:
         return
@@ -197,7 +213,7 @@ def testHTTP(host, port, use_ssl, service):
         return        
 
     try:
-        rc, vc = kerberos.authGSSClientInit(service);
+        rc, vc = kerberos.authGSSClientInit(service=service);
     except kerberos.GSSError, e:
         print "Could not initialize GSSAPI: %s/%s" % (e[0][0], e[1][0])
         return
