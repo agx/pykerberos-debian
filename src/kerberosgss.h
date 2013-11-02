@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2006-2009 Apple Inc. All rights reserved.
+ * Copyright (c) 2006-2013 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,10 @@ typedef struct {
     gss_ctx_id_t     context;
     gss_name_t       server_name;
     long int         gss_flags;
+    gss_cred_id_t    client_creds;
     char*            username;
     char*            response;
+    int              responseConf;
 } gss_client_state;
 
 typedef struct {
@@ -49,11 +51,11 @@ typedef struct {
 
 char* server_principal_details(const char* service, const char* hostname);
 
-int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state);
+int authenticate_gss_client_init(const char* service, const char* principal, long int gss_flags, gss_client_state* state);
 int authenticate_gss_client_clean(gss_client_state *state);
 int authenticate_gss_client_step(gss_client_state *state, const char *challenge);
 int authenticate_gss_client_unwrap(gss_client_state* state, const char* challenge);
-int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user);
+int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user, int protect);
 
 int authenticate_gss_server_init(const char* service, gss_server_state* state);
 int authenticate_gss_server_clean(gss_server_state *state);

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2006-2010 Apple Inc. All rights reserved.
+ * Copyright (c) 2006-2013 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ extern PyObject *KrbException_class;
 char* server_principal_details(const char* service, const char* hostname)
 {
     char match[1024];
-    int match_len = 0;
+    size_t match_len = 0;
     char* result = NULL;
     
     int code;
@@ -106,16 +106,18 @@ end:
     return result;
 }
 
-int authenticate_gss_client_init(const char* service, long int gss_flags, gss_client_state* state)
+int authenticate_gss_client_init(const char* service, const char* principal, long int gss_flags, gss_client_state* state)
 {
     OM_uint32 maj_stat;
     OM_uint32 min_stat;
     gss_buffer_desc name_token = GSS_C_EMPTY_BUFFER;
+    gss_buffer_desc principal_token = GSS_C_EMPTY_BUFFER;
     int ret = AUTH_GSS_COMPLETE;
     
     state->server_name = GSS_C_NO_NAME;
     state->context = GSS_C_NO_CONTEXT;
     state->gss_flags = gss_flags;
+    state->client_creds = GSS_C_NO_CREDENTIAL;
     state->username = NULL;
     state->response = NULL;
     
@@ -132,6 +134,40 @@ int authenticate_gss_client_init(const char* service, long int gss_flags, gss_cl
         goto end;
     }
     
+    // Get credential for principal
+    if (principal && *principal)
+    {
+        gss_name_t name;
+        principal_token.length = strlen(principal);
+        principal_token.value = (char *)principal;
+
+        maj_stat = gss_import_name(&min_stat, &principal_token, GSS_C_NT_USER_NAME, &name);
+        if (GSS_ERROR(maj_stat))
+        {
+            set_gss_error(maj_stat, min_stat);
+            ret = AUTH_GSS_ERROR;
+	    goto end;
+        }
+
+        maj_stat = gss_acquire_cred(&min_stat, name, GSS_C_INDEFINITE, GSS_C_NO_OID_SET, GSS_C_INITIATE, 
+                                    &state->client_creds, NULL, NULL);
+        if (GSS_ERROR(maj_stat))
+        {
+            set_gss_error(maj_stat, min_stat);
+            ret = AUTH_GSS_ERROR;
+	    goto end;
+        }
+
+        maj_stat = gss_release_name(&min_stat, &name);
+        if (GSS_ERROR(maj_stat))
+        {
+	    set_gss_error(maj_stat, min_stat);
+            ret = AUTH_GSS_ERROR;
+            goto end;
+        }
+
+      }
+
 end:
     return ret;
 }
@@ -146,6 +182,8 @@ int authenticate_gss_client_clean(gss_client_state *state)
         maj_stat = gss_delete_sec_context(&min_stat, &state->context, GSS_C_NO_BUFFER);
     if (state->server_name != GSS_C_NO_NAME)
         maj_stat = gss_release_name(&min_stat, &state->server_name);
+    if (state->client_creds != GSS_C_NO_CREDENTIAL)
+        maj_stat = gss_release_cred(&min_stat, &state->client_creds);
     if (state->username != NULL)
     {
         free(state->username);
@@ -178,14 +216,15 @@ int authenticate_gss_client_step(gss_client_state* state, const char* challenge)
     // If there is a challenge (data from the server) we need to give it to GSS
     if (challenge && *challenge)
     {
-        int len;
+        size_t len;
         input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
     
     // Do GSSAPI step
+    Py_BEGIN_ALLOW_THREADS
     maj_stat = gss_init_sec_context(&min_stat,
-                                    GSS_C_NO_CREDENTIAL,
+                                    state->client_creds,
                                     &state->context,
                                     state->server_name,
                                     GSS_C_NO_OID,
@@ -197,6 +236,7 @@ int authenticate_gss_client_step(gss_client_state* state, const char* challenge)
                                     &output_token,
                                     NULL,
                                     NULL);
+    Py_END_ALLOW_THREADS
     
     if ((maj_stat != GSS_S_COMPLETE) && (maj_stat != GSS_S_CONTINUE_NEEDED))
     {
@@ -262,18 +302,20 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
 	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_CONTINUE;
+	int conf = 0;
     
 	// Always clear out the old response
 	if (state->response != NULL)
 	{
 		free(state->response);
 		state->response = NULL;
+		state->responseConf = 0;
 	}
     
 	// If there is a challenge (data from the server) we need to give it to GSS
 	if (challenge && *challenge)
 	{
-		int len;
+		size_t len;
 		input_token.value = base64_decode(challenge, &len);
 		input_token.length = len;
 	}
@@ -283,7 +325,7 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
                           state->context,
                           &input_token,
                           &output_token,
-                          NULL,
+                          &conf,
                           NULL);
     
 	if (maj_stat != GSS_S_COMPLETE)
@@ -299,6 +341,7 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
 	if (output_token.length)
 	{
 		state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
+		state->responseConf = conf;
 		maj_stat = gss_release_buffer(&min_stat, &output_token);
 	}
 end:
@@ -309,7 +352,7 @@ end:
 	return ret;
 }
 
-int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user)
+int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge, const char* user, int protect)
 {
 	OM_uint32 maj_stat;
 	OM_uint32 min_stat;
@@ -328,7 +371,7 @@ int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge,
     
 	if (challenge && *challenge)
 	{
-		int len;
+		size_t len;
 		input_token.value = base64_decode(challenge, &len);
 		input_token.length = len;
 	}
@@ -360,7 +403,7 @@ int authenticate_gss_client_wrap(gss_client_state* state, const char* challenge,
 	// Do GSSAPI wrap
 	maj_stat = gss_wrap(&min_stat,
 						state->context,
-						0,
+						protect,
 						GSS_C_QOP_DEFAULT,
 						&input_token,
 						NULL,
@@ -488,7 +531,7 @@ int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
     // If there is a challenge (data from the server) we need to give it to GSS
     if (challenge && *challenge)
     {
-        int len;
+        size_t len;
         input_token.value = base64_decode(challenge, &len);
         input_token.length = len;
     }
@@ -499,6 +542,7 @@ int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
         goto end;
     }
     
+    Py_BEGIN_ALLOW_THREADS
     maj_stat = gss_accept_sec_context(&min_stat,
                                       &state->context,
                                       state->server_creds,
@@ -510,6 +554,7 @@ int authenticate_gss_server_step(gss_server_state *state, const char *challenge)
                                       NULL,
                                       NULL,
                                       &state->client_creds);
+    Py_END_ALLOW_THREADS
     
     if (GSS_ERROR(maj_stat))
     {

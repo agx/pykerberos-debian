@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2006-2009 Apple Inc. All rights reserved.
+ * Copyright (c) 2006-2013 Apple Inc. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ PyObject *GssException_class;
 
 static PyObject *checkPassword(PyObject *self, PyObject *args)
 {
-    const char *user;
-    const char *pswd;
-    const char *service;
-    const char *default_realm;
+    const char *user = NULL;
+    const char *pswd = NULL;
+    const char *service = NULL;
+    const char *default_realm = NULL;
     int result = 0;
 
     if (!PyArg_ParseTuple(args, "ssss", &user, &pswd, &service, &default_realm))
@@ -46,8 +46,9 @@ static PyObject *checkPassword(PyObject *self, PyObject *args)
 
 static PyObject *changePassword(PyObject *self, PyObject *args)
 {
-    const char *newpswd, *oldpswd;
-    const char *user;
+    const char *newpswd = NULL;
+    const char *oldpswd = NULL;
+    const char *user = NULL;
     int result = 0;
 
     if (!PyArg_ParseTuple(args, "sss", &user, &oldpswd, &newpswd))
@@ -63,8 +64,8 @@ static PyObject *changePassword(PyObject *self, PyObject *args)
 
 static PyObject *getServerPrincipalDetails(PyObject *self, PyObject *args)
 {
-    const char *service;
-    const char *hostname;
+    const char *service = NULL;
+    const char *hostname = NULL;
     char* result;
 
     if (!PyArg_ParseTuple(args, "ss", &service, &hostname))
@@ -84,20 +85,21 @@ static PyObject *getServerPrincipalDetails(PyObject *self, PyObject *args)
 
 static PyObject* authGSSClientInit(PyObject* self, PyObject* args, PyObject* keywds)
 {
-    const char *service;
+    const char *service = NULL;
+    const char *principal = NULL;
     gss_client_state *state;
     PyObject *pystate;
-    static char *kwlist[] = {"service", "gssflags", NULL};
+    static char *kwlist[] = {"service", "principal", "gssflags", NULL};
     long int gss_flags = GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG;
     int result = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|l", kwlist, &service, &gss_flags))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|zl", kwlist, &service, &principal, &gss_flags))
         return NULL;
 
     state = (gss_client_state *) malloc(sizeof(gss_client_state));
     pystate = PyCObject_FromVoidPtr(state, NULL);
 
-    result = authenticate_gss_client_init(service, gss_flags, state);
+    result = authenticate_gss_client_init(service, principal, gss_flags, state);
     if (result == AUTH_GSS_ERROR)
         return NULL;
 
@@ -134,7 +136,7 @@ static PyObject *authGSSClientStep(PyObject *self, PyObject *args)
 {
     gss_client_state *state;
     PyObject *pystate;
-    char *challenge;
+    char *challenge = NULL;
     int result = 0;
 
     if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
@@ -154,6 +156,26 @@ static PyObject *authGSSClientStep(PyObject *self, PyObject *args)
         return NULL;
 
     return Py_BuildValue("i", result);
+}
+
+static PyObject *authGSSClientResponseConf(PyObject *self, PyObject *args)
+{
+    gss_client_state *state;
+    PyObject *pystate;
+
+    if (!PyArg_ParseTuple(args, "O", &pystate))
+        return NULL;
+
+    if (!PyCObject_Check(pystate)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+        return NULL;
+    }
+
+    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
+    if (state == NULL)
+        return NULL;
+
+    return Py_BuildValue("i", state->responseConf);
 }
 
 static PyObject *authGSSClientResponse(PyObject *self, PyObject *args)
@@ -200,7 +222,7 @@ static PyObject *authGSSClientUnwrap(PyObject *self, PyObject *args)
 {
 	gss_client_state *state;
 	PyObject *pystate;
-	char *challenge;
+	char *challenge = NULL;
 	int result = 0;
 
 	if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
@@ -226,10 +248,12 @@ static PyObject *authGSSClientWrap(PyObject *self, PyObject *args)
 {
 	gss_client_state *state;
 	PyObject *pystate;
-	char *challenge, *user = NULL;
+	char *challenge = NULL;
+	char *user = NULL;
+	int protect = 0;
 	int result = 0;
 
-	if (!PyArg_ParseTuple(args, "Os|z", &pystate, &challenge, &user))
+	if (!PyArg_ParseTuple(args, "Os|zi", &pystate, &challenge, &user, &protect))
 		return NULL;
 
 	if (!PyCObject_Check(pystate)) {
@@ -241,7 +265,7 @@ static PyObject *authGSSClientWrap(PyObject *self, PyObject *args)
 	if (state == NULL)
 		return NULL;
 
-	result = authenticate_gss_client_wrap(state, challenge, user);
+	result = authenticate_gss_client_wrap(state, challenge, user, protect);
 	if (result == AUTH_GSS_ERROR)
 		return NULL;
 
@@ -250,7 +274,7 @@ static PyObject *authGSSClientWrap(PyObject *self, PyObject *args)
 
 static PyObject *authGSSServerInit(PyObject *self, PyObject *args)
 {
-    const char *service;
+    const char *service = NULL;
     gss_server_state *state;
     PyObject *pystate;
     int result = 0;
@@ -298,7 +322,7 @@ static PyObject *authGSSServerStep(PyObject *self, PyObject *args)
 {
     gss_server_state *state;
     PyObject *pystate;
-    char *challenge;
+    char *challenge = NULL;
     int result = 0;
 
     if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
@@ -395,6 +419,8 @@ static PyMethodDef KerberosMethods[] = {
      "Do a client-side GSSAPI step."},
     {"authGSSClientResponse",  authGSSClientResponse, METH_VARARGS,
      "Get the response from the last client-side GSSAPI step."},
+    {"authGSSClientResponseConf",  authGSSClientResponseConf, METH_VARARGS,
+     "return 1 if confidentiality was set in the last unwrapped buffer, 0 otherwise."},
     {"authGSSClientUserName",  authGSSClientUserName, METH_VARARGS,
      "Get the user name from the last client-side GSSAPI step."},
     {"authGSSServerInit",  authGSSServerInit, METH_VARARGS,
