@@ -3,7 +3,7 @@ Section: python
 Priority: optional
 Maintainer: Calendarserver Maintainers <calendarserver-maintainers@lists.alioth.debian.org>
 Uploaders: Guido Günther <agx@sigxcpu.org>
-Build-Depends: cdbs, debhelper (>= 5), libkrb5-dev, python-all-dev, python-support (>= 0.3)
+Build-Depends: debhelper (>= 9), libkrb5-dev, python-all-dev, python (>= 2.6.6-3~)
 Standards-Version: 3.9.4
 Vcs-Git: git://git.debian.org/git/calendarserver/pykerberos.git
 Vcs-Browser: http://git.debian.org/?p=calendarserver/pykerberos.git
@@ -14,7 +14,6 @@ Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
 Replaces: python2.4-kerberos (<= 0.0.svn55-1)
 Conflicts: python2.4-kerberos (<= 0.0.svn55-1)
 Provides: ${python:Provides}
-XB-Python-Version: ${python:Versions}
 Description: GSSAPI interface module for Python
  This Python package is a high-level wrapper for Kerberos (GSSAPI) operations.
  The goal is to avoid having to build a module that wraps the entire
