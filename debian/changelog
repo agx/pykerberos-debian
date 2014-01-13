@@ -1,3 +1,16 @@
+pykerberos (1.1+svn10616-2) unstable; urgency=low
+
+  [ Dr. Torge Szczepanek ]
+  * [283e15c] Switch to dpkg-source 3.0 (quilt) format
+  * upload to unstable
+  * Thanks to Guido Günther providing assistance on adoption
+
+  [ Guido Günther ]
+  * [c040b5a] Add Torge to uploaders
+  * [73df52a] Bump standards version
+
+ -- Dr. Torge Szczepanek <debian@cygnusnetworks.de>  Mon, 13 Jan 2014 15:05:59 +0100
+
 pykerberos (1.1+svn10616-1) unstable; urgency=low
 
   * [ef7f26c] New upstream version 1.1+svn10616
