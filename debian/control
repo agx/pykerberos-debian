@@ -2,19 +2,25 @@ Source: pykerberos
 Section: python
 Priority: optional
 Maintainer: Calendarserver Maintainers <calendarserver-maintainers@lists.alioth.debian.org>
-Uploaders: Dr. Torge Szczepanek <debian@cygnusnetworks.de>, Guido Günther <agx@sigxcpu.org>
-Build-Depends: debhelper (>= 9), libkrb5-dev, python-all-dev, python (>= 2.6.6-3~)
+Uploaders: Dr. Torge Szczepanek <debian@cygnusnetworks.de>,
+           Guido Günther <agx@sigxcpu.org>
+Build-Depends: debhelper (>= 9),
+               libkrb5-dev,
+               python (>= 2.6.6-3~),
+               python-all-dev,
+               python-setuptools,
+               python3-all-dev,
+               python3-setuptools
 Standards-Version: 3.9.5
-Vcs-Git: git://git.debian.org/git/calendarserver/pykerberos.git
-Vcs-Browser: http://git.debian.org/?p=calendarserver/pykerberos.git
+Homepage: https://pypi.python.org/pypi/pykerberos
+Vcs-Git: git://anonscm.debian.org/calendarserver/pykerberos.git
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=calendarserver/pykerberos.git
 
 Package: python-kerberos
 Architecture: any
-Depends: ${python:Depends}, ${shlibs:Depends}, ${misc:Depends}
-Replaces: python2.4-kerberos (<= 0.0.svn55-1)
-Conflicts: python2.4-kerberos (<= 0.0.svn55-1)
+Depends: ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}
 Provides: ${python:Provides}
-Description: GSSAPI interface module for Python
+Description: GSSAPI interface module - Python 2.x
  This Python package is a high-level wrapper for Kerberos (GSSAPI) operations.
  The goal is to avoid having to build a module that wraps the entire
  Kerberos.framework, and instead offer a limited set of functions that do what
@@ -22,4 +28,20 @@ Description: GSSAPI interface module for Python
  <http://www.ietf.org/rfc/rfc4559.txt>.
  .
  Much of the C-code here is adapted from Apache's mod_auth_kerb-5.0rc7.
+ .
+ This package contains the Python 2.x module.
 
+Package: python3-kerberos
+Architecture: any
+Depends: lsb-release, ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}
+Provides: ${python3:Provides}
+Description: GSSAPI interface module - Python 3.x
+ This Python package is a high-level wrapper for Kerberos (GSSAPI) operations.
+ The goal is to avoid having to build a module that wraps the entire
+ Kerberos.framework, and instead offer a limited set of functions that do what
+ is needed for client/server Kerberos authentication based on
+ <http://www.ietf.org/rfc/rfc4559.txt>.
+ .
+ Much of the C-code here is adapted from Apache's mod_auth_kerb-5.0rc7.
+ .
+ This package contains the Python 3.x module.

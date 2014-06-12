@@ -302,14 +302,14 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
 	gss_buffer_desc input_token = GSS_C_EMPTY_BUFFER;
 	gss_buffer_desc output_token = GSS_C_EMPTY_BUFFER;
 	int ret = AUTH_GSS_CONTINUE;
-	int conf = 0;
+    int conf = 0;
     
 	// Always clear out the old response
 	if (state->response != NULL)
 	{
 		free(state->response);
 		state->response = NULL;
-		state->responseConf = 0;
+        state->responseConf = 0;
 	}
     
 	// If there is a challenge (data from the server) we need to give it to GSS
@@ -341,7 +341,7 @@ int authenticate_gss_client_unwrap(gss_client_state *state, const char *challeng
 	if (output_token.length)
 	{
 		state->response = base64_encode((const unsigned char *)output_token.value, output_token.length);
-		state->responseConf = conf;
+        state->responseConf = conf;
 		maj_stat = gss_release_buffer(&min_stat, &output_token);
 	}
 end:

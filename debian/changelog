@@ -1,3 +1,24 @@
+pykerberos (1.1.5-0.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * New upstream release (Closes: #751365).
+  * Added a debian/gbp.conf.
+  * Added extend-diff-ignore = "^[^/]*[.]egg-info/" in debian/source/options.
+  * Added python3 support.
+  * Removed useless debian/pyversions and debian/pycompat.
+  * Canonical VCS URLs.
+  * Added a watch file.
+  * debian/copyright using parseable format 1.0.
+  * Added a homepage field.
+  * Drops conflicts + replaces, as this is a very old version that had the
+    issue and even Wheezy should be unaffected now.
+  * Also cleans the build folder to allow double builds.
+  * Disabled some unused dh target to speed-up the build.
+  * Adds ln -s kerberos.cpython-32mu-*.so to kerberos.so in Python 3 for
+    Wheezy, as otherwise it's impossible to import the module.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 12 Jun 2014 12:10:09 +0800
+
 pykerberos (1.1+svn10616-2) unstable; urgency=low
 
   [ Dr. Torge Szczepanek ]
@@ -181,4 +202,3 @@ pykerberos (0.0.svn55-1) unstable; urgency=low
   * Initial release (Closes: #384589)
 
  -- Guido Guenther <agx@sigxcpu.org>  Thu, 24 Aug 2006 14:38:08 +0200
-
