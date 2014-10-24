@@ -168,13 +168,12 @@ def authGSSClientUnwrap(context, challenge):
     @return: a result code (see above) 
     """ 
 
-def authGSSClientWrap(context, data, user=None, protect=0): 
+def authGSSClientWrap(context, data, user=None): 
     """ 
     Perform the client side GSSAPI wrap step.  
     
     @param data:the result of the authGSSClientResponse after the authGSSClientUnwrap 
     @param user: the user to authorize 
-    @param protect: if 0 then just provide integrity protection, if 1, then provide confidentiality as well.
     @return: a result code (see above) 
     """ 
 
