@@ -1,3 +1,13 @@
+pykerberos (1.1.5-1) unstable; urgency=medium
+
+  * [17e7132] Add KDC authenticity verification support (CVE-2015-3206)
+    Obtained from upstream, ignoring white-space changes, URL:
+    https://github.com/02strich/pykerberos/commit/02d13860b25fab58e739f0e000bed0067b7c6f9c
+    basically taken verbatim from the Squeeze LTS version prepared by Mike
+    Gabriel (Closes: #796195)
+
+ -- Guido Günther <agx@sigxcpu.org>  Sat, 22 Aug 2015 13:48:57 +0200
+
 pykerberos (1.1.5-0.1) unstable; urgency=medium
 
   * Non-maintainer upload.
