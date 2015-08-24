@@ -1,3 +1,12 @@
+pykerberos (1.1.5-2) unstable; urgency=medium
+
+  * [d3133b6] Set verify=True in docs too.  This makes the docs consistent
+    with the default behaviour of the function.
+  * [792f3b6] Make verify option really optional. So far it correctly
+    defaulted to true but couldn't be skipped.
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 24 Aug 2015 19:19:14 +0200
+
 pykerberos (1.1.5-1) unstable; urgency=medium
 
   * [17e7132] Add KDC authenticity verification support (CVE-2015-3206)
