@@ -1,3 +1,17 @@
+pykerberos (1.1.14-1) unstable; urgency=medium
+
+  * Update gbp.conf to reflect our Debian branch renaming
+  * New upstream version 1.1.14
+  * Drop patches c-p'ed from upstream.
+      Add-KDC-authenticity-verification-support-CVE-2015-3206.patch
+      Drop Include-bin-login-an-example-script-allowing-the-user.patch
+  * d/gbp.conf: Use new section names
+  * d/control: Use https in Vcs-* URLs
+  * Remove superfluous post* scripts
+  * d/control: bump standards version
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 29 Nov 2017 11:03:44 +0100
+
 pykerberos (1.1.5-2) unstable; urgency=medium
 
   * [d3133b6] Set verify=True in docs too.  This makes the docs consistent
