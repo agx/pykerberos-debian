@@ -3,6 +3,7 @@ MANIFEST.in
 README.txt
 setup.py
 bin/ftp-gss
+bin/login
 pykerberos.egg-info/PKG-INFO
 pykerberos.egg-info/SOURCES.txt
 pykerberos.egg-info/dependency_links.txt
