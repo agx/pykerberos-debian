@@ -27,17 +27,17 @@ class BasicAuthError(KrbError):
 class GSSError(KrbError):
     pass
 
-def checkPassword(user, pswd, service, default_realm):
+def checkPassword(user, pswd, service, default_realm, verify=True):
     """
     This function provides a simple way to verify that a user name and password match
     those normally used for Kerberos authentication. It does this by checking that the
     supplied user name and password can be used to get a ticket for the supplied service.
     If the user name does not contain a realm, then the default realm supplied is used.
-    
+
     NB For this to work properly the Kerberos must be configured properly on this machine.
     That will likely mean ensuring that the edu.mit.Kerberos preference file has the correct
     realms and KDCs listed.
-    
+
     @param user:          a string containing the Kerberos user name. A realm may be
         included by appending an '@' followed by the realm string to the actual user id.
         If no realm is supplied, then the realm set in the default_realm argument will
@@ -49,6 +49,8 @@ def checkPassword(user, pswd, service, default_realm):
     @param default_realm: a string containing the default realm to use if one is not
         supplied in the user argument. Note that Kerberos realms are normally all
         uppercase (e.g., 'EXAMPLE.COM').
+    @param verify: a boolean flagging KDC verification as enabled or disabled
+        (default: True, i.e. enabled).
     @return:              True if authentication succeeds, False otherwise.
     """
 
@@ -69,7 +71,7 @@ def getServerPrincipalDetails(service, hostname):
     """
     This function returns the service principal for the server given a service type
     and hostname. Details are looked up via the /etc/keytab file.
-    
+
     @param service:       a string containing the Kerberos service type for the server.
     @param hostname:      a string containing the hostname of the server.
     @return:              a string containing the service principal.
@@ -77,7 +79,7 @@ def getServerPrincipalDetails(service, hostname):
 
 """
 GSSAPI Function Result Codes:
-    
+
     -1 : Error
     0  : GSSAPI step continuation (only returned by 'Step' function)
     1  : GSSAPI step complete, or function return OK
@@ -85,21 +87,21 @@ GSSAPI Function Result Codes:
 """
 
 # Some useful result codes
-AUTH_GSS_CONTINUE     = 0 
-AUTH_GSS_COMPLETE     = 1 
-     
-# Some useful gss flags 
-GSS_C_DELEG_FLAG      = 1 
-GSS_C_MUTUAL_FLAG     = 2 
-GSS_C_REPLAY_FLAG     = 4 
-GSS_C_SEQUENCE_FLAG   = 8 
-GSS_C_CONF_FLAG       = 16 
-GSS_C_INTEG_FLAG      = 32 
-GSS_C_ANON_FLAG       = 64 
-GSS_C_PROT_READY_FLAG = 128 
-GSS_C_TRANS_FLAG      = 256 
-     
-def authGSSClientInit(service, principal=None, gssflags=GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG):
+AUTH_GSS_CONTINUE     = 0
+AUTH_GSS_COMPLETE     = 1
+
+# Some useful gss flags
+GSS_C_DELEG_FLAG      = 1
+GSS_C_MUTUAL_FLAG     = 2
+GSS_C_REPLAY_FLAG     = 4
+GSS_C_SEQUENCE_FLAG   = 8
+GSS_C_CONF_FLAG       = 16
+GSS_C_INTEG_FLAG      = 32
+GSS_C_ANON_FLAG       = 64
+GSS_C_PROT_READY_FLAG = 128
+GSS_C_TRANS_FLAG      = 256
+
+def authGSSClientInit(service, principal=None, gssflags=GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG, mech_oid=None):
     """
     Initializes a context for GSSAPI client-side authentication with the given service principal.
     authGSSClientClean must be called after this function returns an OK result to dispose of
@@ -110,16 +112,19 @@ def authGSSClientInit(service, principal=None, gssflags=GSS_C_MUTUAL_FLAG|GSS_C_
     @param principal: optional string containing the client principal in the form 'user@realm'
         (e.g. 'jdoe@example.com').
     @param gssflags: optional integer used to set GSS flags.
-        (e.g.  GSS_C_DELEG_FLAG|GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG will allow 
+        (e.g.  GSS_C_DELEG_FLAG|GSS_C_MUTUAL_FLAG|GSS_C_SEQUENCE_FLAG will allow
         for forwarding credentials to the remote host)
+    @param mech_oid: Optional GSS mech OID. Defaults to None (GSS_C_NO_OID).
+        Other possible values are GSS_MECH_OID_KRB5, GSS_MECH_OID_SPNEGO.
     @return: a tuple of (result, context) where result is the result code (see above) and
         context is an opaque value that will need to be passed to subsequent functions.
     """
 
 def authGSSClientClean(context):
     """
-    Destroys the context for GSSAPI client-side authentication. After this call the context
-    object is invalid and should not be used again.
+    Destroys the context for GSSAPI client-side authentication. This function is provided for API
+    compatibility with original pykerberos but does nothing. The context object destroys itself
+    when it is reclaimed.
 
     @param context: the context object returned from authGSSClientInit.
     @return: a result code (see above).
@@ -160,22 +165,22 @@ def authGSSClientUserName(context):
     @return: a string containing the user name.
     """
 
-def authGSSClientUnwrap(context, challenge): 
-    """ 
-    Perform the client side GSSAPI unwrap step 
-    
-    @param challenge: a string containing the base64-encoded server data. 
-    @return: a result code (see above) 
-    """ 
+def authGSSClientUnwrap(context, challenge):
+    """
+    Perform the client side GSSAPI unwrap step
 
-def authGSSClientWrap(context, data, user=None): 
-    """ 
-    Perform the client side GSSAPI wrap step.  
-    
-    @param data:the result of the authGSSClientResponse after the authGSSClientUnwrap 
-    @param user: the user to authorize 
-    @return: a result code (see above) 
-    """ 
+    @param challenge: a string containing the base64-encoded server data.
+    @return: a result code (see above)
+    """
+
+def authGSSClientWrap(context, data, user=None):
+    """
+    Perform the client side GSSAPI wrap step.
+
+    @param data:the result of the authGSSClientResponse after the authGSSClientUnwrap
+    @param user: the user to authorize
+    @return: a result code (see above)
+    """
 
 def authGSSServerInit(service):
     """
@@ -191,8 +196,9 @@ def authGSSServerInit(service):
 
 def authGSSServerClean(context):
     """
-    Destroys the context for GSSAPI server-side authentication. After this call the context
-    object is invalid and should not be used again.
+    Destroys the context for GSSAPI server-side authentication. This function is provided for API
+    compatibility with original pykerberos but does nothing. The context object destroys itself
+    when it is reclaimed.
 
     @param context: the context object returned from authGSSServerInit.
     @return: a result code (see above).
@@ -232,4 +238,3 @@ def authGSSServerTargetName(context):
     @param context: the context object returned from authGSSServerInit.
     @return: a string containing the target name.
     """
-

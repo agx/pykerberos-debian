@@ -22,501 +22,487 @@
 
 #if PY_MAJOR_VERSION >= 3
     #define PyInt_FromLong PyLong_FromLong
+
+    #define PyNew(object, destr) PyCapsule_New(object, NULL, destr)
+    #define PyCheck(object) PyCapsule_CheckExact(object)
+    #define PyGet(object, type) PyCapsule_GetPointer(object, NULL)
+    #define PyClear(object) PyCapsule_SetPointer(object, NULL)
+#else
+    #define PyNew(object, destr) PyCObject_FromVoidPtr(object, destr)
+    #define PyCheck(object) PyCObject_Check(object)
+    #define PyGet(object, type) (type *)PyCObject_AsVoidPtr(object)
+    #define PyClear(object) PyCObject_SetVoidPtr(object, NULL)
 #endif
+
+static char krb5_mech_oid_bytes [] = "\x2a\x86\x48\x86\xf7\x12\x01\x02\x02";
+gss_OID_desc krb5_mech_oid = { 9, &krb5_mech_oid_bytes };
+
+static char spnego_mech_oid_bytes[] = "\x2b\x06\x01\x05\x05\x02";
+gss_OID_desc spnego_mech_oid = { 6, &spnego_mech_oid_bytes };
 
 PyObject *KrbException_class;
 PyObject *BasicAuthException_class;
 PyObject *PwdChangeException_class;
 PyObject *GssException_class;
 
-static PyObject *checkPassword(PyObject *self, PyObject *args)
-{
+static PyObject *checkPassword(PyObject *self, PyObject *args) {
     const char *user = NULL;
     const char *pswd = NULL;
     const char *service = NULL;
     const char *default_realm = NULL;
+    const int verify = 1;
     int result = 0;
 
-    if (!PyArg_ParseTuple(args, "ssss", &user, &pswd, &service, &default_realm))
+    if (!PyArg_ParseTuple(args, "ssss|b", &user, &pswd, &service, &default_realm, &verify)) {
         return NULL;
+    }
 
-    result = authenticate_user_krb5pwd(user, pswd, service, default_realm);
+    result = authenticate_user_krb5pwd(user, pswd, service, default_realm, verify);
 
-    if (result)
+    if (result) {
         return Py_INCREF(Py_True), Py_True;
-    else
+    } else {
         return NULL;
+    }
 }
 
-static PyObject *changePassword(PyObject *self, PyObject *args)
-{
+static PyObject *changePassword(PyObject *self, PyObject *args) {
     const char *newpswd = NULL;
     const char *oldpswd = NULL;
     const char *user = NULL;
     int result = 0;
 
-    if (!PyArg_ParseTuple(args, "sss", &user, &oldpswd, &newpswd))
+    if (!PyArg_ParseTuple(args, "sss", &user, &oldpswd, &newpswd)) {
         return NULL;
+    }
 
     result = change_user_krb5pwd(user, oldpswd, newpswd);
 
-    if (result)
-	return Py_INCREF(Py_True), Py_True;
-    else
-	return NULL;
+    if (result) {
+        return Py_INCREF(Py_True), Py_True;
+    } else {
+        return NULL;
+    }
 }
 
-static PyObject *getServerPrincipalDetails(PyObject *self, PyObject *args)
-{
+static PyObject *getServerPrincipalDetails(PyObject *self, PyObject *args) {
     const char *service = NULL;
     const char *hostname = NULL;
     char* result;
 
-    if (!PyArg_ParseTuple(args, "ss", &service, &hostname))
+    if (!PyArg_ParseTuple(args, "ss", &service, &hostname)) {
         return NULL;
+    }
 
     result = server_principal_details(service, hostname);
 
-    if (result != NULL)
-    {
+    if (result != NULL) {
         PyObject* pyresult = Py_BuildValue("s", result);
         free(result);
         return pyresult;
-    }
-    else
+    } else {
         return NULL;
+    }
 }
 
-static PyObject* authGSSClientInit(PyObject* self, PyObject* args, PyObject* keywds)
-{
+#if PY_MAJOR_VERSION >= 3
+void destruct_client(PyObject* o) {
+    gss_client_state *state;
+    state = PyCapsule_GetPointer(o, NULL);
+#else
+void destruct_client(void* o) {
+    gss_client_state *state;
+    state = (gss_client_state *)o;
+#endif
+
+    if (state != NULL) {
+        authenticate_gss_client_clean(state);
+        free(state);
+    }
+}
+
+static PyObject* authGSSClientInit(PyObject* self, PyObject* args, PyObject* keywds) {
     const char *service = NULL;
     const char *principal = NULL;
     gss_client_state *state;
     PyObject *pystate;
-    static char *kwlist[] = {"service", "principal", "gssflags", NULL};
+    gss_OID mech_oid = GSS_C_NO_OID;
+    PyObject *pymech_oid = NULL;
+    static char *kwlist[] = {"service", "principal", "gssflags", "mech_oid", NULL};
     long int gss_flags = GSS_C_MUTUAL_FLAG | GSS_C_SEQUENCE_FLAG;
     int result = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|zl", kwlist, &service, &principal, &gss_flags))
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "s|zlO", kwlist, &service, &principal, &gss_flags, &pymech_oid)) {
         return NULL;
+    }
+
+    if (pymech_oid != NULL) {
+        if (!PyCheck(pymech_oid)) {
+            PyErr_SetString(PyExc_TypeError, "Invalid type for mech_oid");
+            return NULL;
+        }
+        mech_oid = PyGet(pymech_oid, gss_OID_desc);
+        if (mech_oid == NULL) {
+            PyErr_SetString(PyExc_TypeError, "Invalid value for mech_oid");
+            return NULL;
+        }
+    }
 
     state = (gss_client_state *) malloc(sizeof(gss_client_state));
-#if PY_MAJOR_VERSION >= 3
-    pystate = PyCapsule_New(state, NULL, NULL);
-#else
-    pystate = PyCObject_FromVoidPtr(state, NULL);
-#endif
+    pystate = PyNew(state, &destruct_client);
 
-    result = authenticate_gss_client_init(service, principal, gss_flags, state);
-    if (result == AUTH_GSS_ERROR)
-        return NULL;
-
-    return Py_BuildValue("(iO)", result, pystate);
-}
-
-static PyObject *authGSSClientClean(PyObject *self, PyObject *args)
-{
-    gss_client_state *state;
-    PyObject *pystate;
-    int result = 0;
-
-    if (!PyArg_ParseTuple(args, "O", &pystate))
-        return NULL;
-
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
-        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+    result = authenticate_gss_client_init(service, principal, gss_flags, mech_oid, state);
+    if (result == AUTH_GSS_ERROR) {
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state != NULL)
-    {
-        result = authenticate_gss_client_clean(state);
-
-        free(state);
-#if PY_MAJOR_VERSION >= 3
-        PyCapsule_SetPointer(pystate, NULL);
-#else
-        PyCObject_SetVoidPtr(pystate, NULL);
-#endif
-    }
-
-    return Py_BuildValue("i", result);
+    return Py_BuildValue("(iN)", result, pystate);
 }
 
-static PyObject *authGSSClientStep(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSClientClean(PyObject *self, PyObject *args) {
+    return Py_BuildValue("i", AUTH_GSS_COMPLETE);
+}
+
+static PyObject *authGSSClientStep(PyObject *self, PyObject *args) {
     gss_client_state *state;
     PyObject *pystate;
     char *challenge = NULL;
     int result = 0;
 
-    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
+    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     result = authenticate_gss_client_step(state, challenge);
-    if (result == AUTH_GSS_ERROR)
+    if (result == AUTH_GSS_ERROR) {
         return NULL;
+    }
 
     return Py_BuildValue("i", result);
 }
 
-static PyObject *authGSSClientResponseConf(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSClientResponseConf(PyObject *self, PyObject *args) {
     gss_client_state *state;
     PyObject *pystate;
 
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     return Py_BuildValue("i", state->responseConf);
 }
 
-static PyObject *authGSSClientResponse(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSClientResponse(PyObject *self, PyObject *args) {
     gss_client_state *state;
     PyObject *pystate;
 
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     return Py_BuildValue("s", state->response);
 }
 
-static PyObject *authGSSClientUserName(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSClientUserName(PyObject *self, PyObject *args) {
     gss_client_state *state;
     PyObject *pystate;
 
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     return Py_BuildValue("s", state->username);
 }
 
-static PyObject *authGSSClientUnwrap(PyObject *self, PyObject *args)
-{
-	gss_client_state *state;
-	PyObject *pystate;
-	char *challenge = NULL;
-	int result = 0;
+static PyObject *authGSSClientUnwrap(PyObject *self, PyObject *args) {
+    gss_client_state *state;
+    PyObject *pystate;
+	  char *challenge = NULL;
+	  int result = 0;
 
-	if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge)) {
+        return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
-		PyErr_SetString(PyExc_TypeError, "Expected a context object");
-		return NULL;
-	}
+    if (!PyCheck(pystate)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+        return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-	if (state == NULL)
-		return NULL;
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
+        return NULL;
+    }
 
-	result = authenticate_gss_client_unwrap(state, challenge);
-	if (result == AUTH_GSS_ERROR)
-		return NULL;
+    result = authenticate_gss_client_unwrap(state, challenge);
+    if (result == AUTH_GSS_ERROR) {
+        return NULL;
+    }
 
-	return Py_BuildValue("i", result);
+    return Py_BuildValue("i", result);
 }
 
-static PyObject *authGSSClientWrap(PyObject *self, PyObject *args)
-{
-	gss_client_state *state;
-	PyObject *pystate;
-	char *challenge = NULL;
-	char *user = NULL;
+#ifdef GSSAPI_EXT
+static PyObject *authGSSClientUnwrapIov(PyObject *self, PyObject *args) {
+    gss_client_state *state;
+    PyObject *pystate;
+    char *challenge = NULL;
+    int result = 0;
+
+    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge)) {
+        return NULL;
+    }
+
+    if (!PyCheck(pystate)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+        return NULL;
+    }
+
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    result = authenticate_gss_client_unwrap_iov(state, challenge);
+    if (result == AUTH_GSS_ERROR) {
+        return NULL;
+    }
+
+    return Py_BuildValue("i", result);
+}
+#endif
+
+static PyObject *authGSSClientWrap(PyObject *self, PyObject *args) {
+    gss_client_state *state;
+    PyObject *pystate;
+    char *challenge = NULL;
+    char *user = NULL;
     int protect = 0;
-	int result = 0;
+    int result = 0;
 
-	if (!PyArg_ParseTuple(args, "Os|zi", &pystate, &challenge, &user, &protect))
-		return NULL;
+    if (!PyArg_ParseTuple(args, "Os|zi", &pystate, &challenge, &user, &protect)) {
+        return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
-		PyErr_SetString(PyExc_TypeError, "Expected a context object");
-		return NULL;
-	}
+    if (!PyCheck(pystate)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+        return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-	if (state == NULL)
-		return NULL;
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
+        return NULL;
+    }
 
-	result = authenticate_gss_client_wrap(state, challenge, user, protect);
-	if (result == AUTH_GSS_ERROR)
-		return NULL;
+    result = authenticate_gss_client_wrap(state, challenge, user, protect);
+    if (result == AUTH_GSS_ERROR) {
+        return NULL;
+    }
 
-	return Py_BuildValue("i", result);
+    return Py_BuildValue("i", result);
 }
 
-static PyObject *authGSSServerInit(PyObject *self, PyObject *args)
-{
+#ifdef GSSAPI_EXT
+static PyObject *authGSSClientWrapIov(PyObject *self, PyObject *args) {
+    gss_client_state *state;
+    PyObject *pystate;
+    char *challenge = NULL;
+    int protect = 1;
+    int result = 0;
+    int pad_len = 0;
+
+    if (!PyArg_ParseTuple(args, "Os|i", &pystate, &challenge, &protect)) {
+        return NULL;
+    }
+
+    if (!PyCheck(pystate)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+        return NULL;
+    }
+
+    state = PyGet(pystate, gss_client_state);
+    if (state == NULL) {
+        return NULL;
+    }
+
+    result = authenticate_gss_client_wrap_iov(state, challenge, protect, &pad_len);
+    if (result == AUTH_GSS_ERROR) {
+        return NULL;
+    }
+
+    return Py_BuildValue("ii", result, pad_len);
+}
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+void destruct_server(PyObject* o) {
+    gss_server_state *state;
+    state = PyCapsule_GetPointer(o, NULL);
+#else
+void destruct_server(void* o) {
+    gss_server_state *state;
+    state = (gss_server_state *)o;
+#endif
+
+    if (state != NULL) {
+        authenticate_gss_server_clean(state);
+        free(state);
+    }
+}
+
+static PyObject *authGSSServerInit(PyObject *self, PyObject *args) {
     const char *service = NULL;
     gss_server_state *state;
     PyObject *pystate;
     int result = 0;
 
-    if (!PyArg_ParseTuple(args, "s", &service))
+    if (!PyArg_ParseTuple(args, "s", &service)) {
         return NULL;
+    }
 
     state = (gss_server_state *) malloc(sizeof(gss_server_state));
-#if PY_MAJOR_VERSION >= 3
-    pystate = PyCapsule_New(state, NULL, NULL);
-#else
-    pystate = PyCObject_FromVoidPtr(state, NULL);
-#endif
+    pystate = PyNew(state, &destruct_server);
 
     result = authenticate_gss_server_init(service, state);
-    if (result == AUTH_GSS_ERROR)
-        return NULL;
-
-    return Py_BuildValue("(iO)", result, pystate);
-}
-
-static PyObject *authGSSServerClean(PyObject *self, PyObject *args)
-{
-    gss_server_state *state;
-    PyObject *pystate;
-    int result = 0;
-
-    if (!PyArg_ParseTuple(args, "O", &pystate))
-        return NULL;
-
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
-        PyErr_SetString(PyExc_TypeError, "Expected a context object");
+    if (result == AUTH_GSS_ERROR) {
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state != NULL)
-    {
-        result = authenticate_gss_server_clean(state);
-
-        free(state);
-#if PY_MAJOR_VERSION >= 3
-        PyCapsule_SetPointer(pystate, NULL);
-#else
-        PyCObject_SetVoidPtr(pystate, NULL);
-#endif
-    }
-
-    return Py_BuildValue("i", result);
+    return Py_BuildValue("(iN)", result, pystate);
 }
 
-static PyObject *authGSSServerStep(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSServerClean(PyObject *self, PyObject *args) {
+    return Py_BuildValue("i", AUTH_GSS_COMPLETE);
+}
+
+static PyObject *authGSSServerStep(PyObject *self, PyObject *args) {
     gss_server_state *state;
     PyObject *pystate;
     char *challenge = NULL;
     int result = 0;
 
-    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge))
+    if (!PyArg_ParseTuple(args, "Os", &pystate, &challenge)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_server_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     result = authenticate_gss_server_step(state, challenge);
-    if (result == AUTH_GSS_ERROR)
+    if (result == AUTH_GSS_ERROR) {
         return NULL;
+    }
 
     return Py_BuildValue("i", result);
 }
 
-static PyObject *authGSSServerResponse(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSServerResponse(PyObject *self, PyObject *args) {
     gss_server_state *state;
     PyObject *pystate;
 
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
+    }
 
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
 
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+    state = PyGet(pystate, gss_server_state);
+    if (state == NULL) {
         return NULL;
+    }
 
     return Py_BuildValue("s", state->response);
 }
 
-static PyObject *authGSSServerUserName(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSServerUserName(PyObject *self, PyObject *args) {
     gss_server_state *state;
     PyObject *pystate;
-    
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
-    
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    }
+
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
-    
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+
+    state = PyGet(pystate, gss_server_state);
+    if (state == NULL) {
         return NULL;
-    
+    }
+
     return Py_BuildValue("s", state->username);
 }
 
-static PyObject *authGSSServerTargetName(PyObject *self, PyObject *args)
-{
+static PyObject *authGSSServerTargetName(PyObject *self, PyObject *args) {
     gss_server_state *state;
     PyObject *pystate;
-    
-    if (!PyArg_ParseTuple(args, "O", &pystate))
+
+    if (!PyArg_ParseTuple(args, "O", &pystate)) {
         return NULL;
-    
-#if PY_MAJOR_VERSION >= 3
-    if (!PyCapsule_CheckExact(pystate)) {
-#else
-    if (!PyCObject_Check(pystate)) {
-#endif
+    }
+
+    if (!PyCheck(pystate)) {
         PyErr_SetString(PyExc_TypeError, "Expected a context object");
         return NULL;
     }
-    
-#if PY_MAJOR_VERSION >= 3
-    state = PyCapsule_GetPointer(pystate, NULL);
-#else
-    state = (gss_client_state *)PyCObject_AsVoidPtr(pystate);
-#endif
-    if (state == NULL)
+
+    state = PyGet(pystate, gss_server_state);
+    if (state == NULL) {
         return NULL;
-    
+    }
+
     return Py_BuildValue("s", state->targetname);
 }
 
@@ -545,6 +531,12 @@ static PyMethodDef KerberosMethods[] = {
      "Do a GSSAPI wrap."},
     {"authGSSClientUnwrap",  authGSSClientUnwrap, METH_VARARGS,
      "Do a GSSAPI unwrap."},
+#ifdef GSSAPI_EXT
+    {"authGSSClientWrapIov",  authGSSClientWrapIov, METH_VARARGS,
+     "Do a GSSAPI iov wrap."},
+    {"authGSSClientUnwrapIov",  authGSSClientUnwrapIov, METH_VARARGS,
+     "Do a GSSAPI iov unwrap."},
+#endif
     {"authGSSServerClean",  authGSSServerClean, METH_VARARGS,
      "Terminate server-side GSSAPI operations."},
     {"authGSSServerStep",  authGSSServerStep, METH_VARARGS,
@@ -625,6 +617,8 @@ void initkerberos(void)
     PyDict_SetItemString(d, "GSS_C_ANON_FLAG", PyInt_FromLong(GSS_C_ANON_FLAG));
     PyDict_SetItemString(d, "GSS_C_PROT_READY_FLAG", PyInt_FromLong(GSS_C_PROT_READY_FLAG));
     PyDict_SetItemString(d, "GSS_C_TRANS_FLAG", PyInt_FromLong(GSS_C_TRANS_FLAG));
+    PyDict_SetItemString(d, "GSS_MECH_OID_KRB5", PyNew(&krb5_mech_oid, NULL));
+    PyDict_SetItemString(d, "GSS_MECH_OID_SPNEGO", PyNew(&spnego_mech_oid, NULL));
 
 error:
     if (PyErr_Occurred())
