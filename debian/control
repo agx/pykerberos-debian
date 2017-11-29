@@ -13,8 +13,8 @@ Build-Depends: debhelper (>= 9),
                python3-setuptools
 Standards-Version: 3.9.5
 Homepage: https://pypi.python.org/pypi/pykerberos
-Vcs-Git: git://anonscm.debian.org/calendarserver/pykerberos.git
-Vcs-Browser: http://anonscm.debian.org/gitweb/?p=calendarserver/pykerberos.git
+Vcs-Git: https://anonscm.debian.org/git/calendarserver/pykerberos.git/
+Vcs-Browser: https://anonscm.debian.org/cgit/calendarserver/pykerberos.git/
 
 Package: python-kerberos
 Architecture: any
